@@ -20,6 +20,7 @@ from dash import ALL, Dash, Input, Output, State, ctx, dcc, html, no_update
 import config as cfg
 import figures as figs
 import sail_analysis as sa
+import alerts_tab   
 
 STEP = pd.Timedelta(minutes=cfg.INTERVAL_MIN)
 SLOTS_PER_DAY = 24 * 60 // cfg.INTERVAL_MIN
@@ -74,6 +75,9 @@ def level_key():
                        className="item") for k in cfg.LEVEL_KEYS]
     items.append(html.Span([dot("unavailable"), cfg.LEVEL_LABEL["unavailable"]], className="item"))
     items.append(html.Span([html.Span(className="halo-key"), f"Sudden change (last {cfg.ALERT_ACTIVE_MIN} min)"],
+                           className="item"))
+    items.append(html.Span([html.Span("→", style={"color": "var(--accent)", "fontWeight": 700}),
+                            "Walking direction: a longer, thicker arrow = more pedestrians per minute"],
                            className="item"))
     items.append(html.Span("Heat map: the glow grows with q = pedestrians per minute per metre of effective "
                            "width (Fruin levels)", className="item", style={"color": "var(--muted)"}))
@@ -133,10 +137,14 @@ def monitoring_tab(live: bool):
             card("Map of sensor locations", [
                 dcc.Graph(id="map", config={**GRAPH_CONFIG, "scrollZoom": True}, style={"height": "470px"}),
                 level_key()], sub="Colour = pressure level at the measurement time · click a marker to select it",
-                head_extra=dcc.RadioItems(id="map-view", value=cfg.MAP_VIEW_DEFAULT, inline=True,
-                                          className="radio-inline",
-                                          options=[{"label": "Heat map", "value": "heat"},
-                                                   {"label": "Markers", "value": "markers"}]),
+                head_extra=html.Div(className="chart-options", children=[
+                    dcc.RadioItems(id="map-view", value=cfg.MAP_VIEW_DEFAULT, inline=True, className="radio-inline",
+                                   options=[{"label": "Heat map", "value": "heat"},
+                                            {"label": "Markers", "value": "markers"}]),
+                    dcc.Checklist(id="map-flows", value=["on"] if cfg.FLOW_ARROWS_DEFAULT else [], inline=True,
+                                  className="check-inline",
+                                  options=[{"label": "Walking directions", "value": "on"}]),
+                ]),
                 cls="span-7", flush=True),
             html.Div(className="span-5 stack", children=[
                 card("Highest pressure now", [dcc.Graph(id="ranking", config=GRAPH_CONFIG)],
@@ -203,20 +211,21 @@ def evaluation_tab():
 
 def build_layout(live: bool):
     return html.Div(className="app", children=[
-        dcc.Store(id="theme", storage_type="local"),
+        dcc.Store(id="theme", data="light"), 
         dcc.Store(id="data-version", data=0),
         dcc.Interval(id="live-refresh", interval=cfg.LIVE_REFRESH_S * 1000, disabled=not live),
         html.Header(className="topbar", children=[
             html.Div([html.H1("SAIL2025 crowd monitor"),
                       html.P("Pedestrian flows at the LVMA counting sensors · SAIL Amsterdam, 20–24 August 2025",
                              className="subtitle")]),
-            html.Div([html.Button("Dark mode", id="theme-toggle", className="btn ghost")], className="topbar-right"),
+        dcc.Interval(id="ticker", interval=1000, disabled=True), alerts_tab.popup(),
         ]),
         dcc.Tabs(id="tabs", value="monitoring", className="tabs", mobile_breakpoint=0, children=[
             dcc.Tab(label="Monitoring", value="monitoring", className="tab", selected_className="tab--selected",
                     children=monitoring_tab(live)),
             dcc.Tab(label="Evaluation", value="evaluation", className="tab", selected_className="tab--selected",
                     children=evaluation_tab()),
+            dcc.Tab(label="Alerts", value="alerts", className="tab", selected_className="tab--selected", children=alerts_tab.layout(DATA)),
         ]),
     ])
 
@@ -370,24 +379,6 @@ def create_app(live=False) -> Dash:
     app = Dash(__name__, title="SAIL2025 crowd monitor", suppress_callback_exceptions=True)
     app.layout = build_layout(live)
 
-    # theme: OS preference on first visit, then the toggle; remembered in the browser
-    app.clientside_callback(
-        """
-        function(n, stored) {
-            var theme = stored;
-            if (!theme) {
-                theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-            } else if (n) {
-                theme = stored === 'dark' ? 'light' : 'dark';
-            }
-            document.documentElement.setAttribute('data-theme', theme);
-            return [theme, theme === 'dark' ? 'Light mode' : 'Dark mode'];
-        }
-        """,
-        Output("theme", "data"), Output("theme-toggle", "children"),
-        Input("theme-toggle", "n_clicks"), State("theme", "data"),
-    )
-
     # ---- replay ------------------------------------------------------------
     @app.callback(Output("ticker", "disabled"), Output("play", "children"), Output("ticker", "interval"),
                   Input("play", "n_clicks"), Input("speed", "value"), State("ticker", "disabled"))
@@ -435,15 +426,15 @@ def create_app(live=False) -> Dash:
     # ---- overview: banner, map, ranking, alerts ------------------------------
     @app.callback(Output("banner", "children"), Output("map", "figure"), Output("ranking", "figure"),
                   Output("alerts", "children"),
-                  Input("day", "value"), Input("slot", "value"), Input("location", "value"),
-                  Input("map-view", "value"), Input("theme", "data"), Input("data-version", "data"))
-    def update_overview(day, slot, sensor, map_view, theme, _):
+                  Input("map-view", "value"), Input("map-flows", "value"), Input("theme", "data"),
+                  Input("data-version", "data"))
+    def update_overview(day, slot, sensor, map_view, flows, theme, _):
         t = ts_of(day, slot)
         snap = DATA.snapshot(t)
         active = sa.recent_events(DATA.events, t, cfg.ALERT_ACTIVE_MIN)["sensor"].unique()
         recent = sa.recent_events(DATA.events, t, cfg.ALERT_LOOKBACK_MIN)
         return (banner_children(t, snap, live),
-                figs.map_figure(snap, sensor, active, theme, map_view),
+                figs.map_figure(snap, sensor, active, theme, map_view, bool(flows), DATA.sensors),
                 figs.ranking_figure(sa.ranking(snap), theme),
                 alert_items(recent))
 
@@ -517,6 +508,8 @@ def create_app(live=False) -> Dash:
         ev = ev.round({"N_before": 1, "change": 1, "change_pct": 1, "q_at_flag": 2})
         return dcc.send_data_frame(ev.drop(columns=["label"], errors="ignore").to_csv,
                                    "sail2025_sudden_changes.csv", index=False)
+    
+    alerts_tab.register_callbacks(app, lambda: DATA)
 
     return app
 

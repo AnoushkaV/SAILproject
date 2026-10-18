@@ -19,43 +19,6 @@
   --warn-ink: #6b4a00;
 }
 
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d;
-  --surface: #1a1a19;
-  --ink: #f0efec;
-  --ink2: #c3c2b7;
-  --muted: #9c9a93;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --border: rgba(255, 255, 255, 0.10);
-  --hover: rgba(255, 255, 255, 0.06);
-  --accent: #3987e5;
-  --series-a: #d95926;
-  --series-b: #199e70;
-  --warn-bg: #3a2e10;
-  --warn-ink: #f6d58a;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --page: #0d0d0d;
-    --surface: #1a1a19;
-    --ink: #f0efec;
-    --ink2: #c3c2b7;
-    --muted: #9c9a93;
-    --grid: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --hover: rgba(255, 255, 255, 0.06);
-    --accent: #3987e5;
-    --series-a: #d95926;
-    --series-b: #199e70;
-    --warn-bg: #3a2e10;
-    --warn-ink: #f6d58a;
-  }
-}
 
 /* Dash 4 component tokens follow the theme */
 :root {

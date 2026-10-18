@@ -1,0 +1,23 @@
+/* Alerts tab and pop-up (alerts_tab.py) - Dash loads this file automatically */
+
+.radio-stack { display: flex; flex-direction: column; gap: 4px; }
+.rule-form { display: flex; flex-direction: column; gap: 14px; }
+.rule-form .field { min-width: 0; }
+
+.rules { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+.rule { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center;
+        border-top: 1px solid var(--grid); padding: 8px 0; }
+.rule-what { font-weight: 600; }
+.rule-where { color: var(--ink2); font-size: 12.5px; }
+
+.popup {
+  position: fixed; top: 16px; right: 16px; z-index: 1000; width: min(420px, calc(100vw - 32px));
+  background: var(--surface); color: var(--ink); border: 1px solid var(--axis); border-top: 6px solid var(--ink);
+  border-radius: 12px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22); padding: 12px 14px;
+}
+.popup-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 15px; }
+.popup-body { display: flex; flex-direction: column; max-height: 60vh; overflow-y: auto; }
+.popup-item { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: center;
+              border-top: 1px solid var(--grid); padding: 8px 0; }
+.popup-time { color: var(--ink2); margin-left: 8px; font-variant-numeric: tabular-nums; }
+.popup-text { color: var(--ink2); font-size: 12.5px; }

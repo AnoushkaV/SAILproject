@@ -86,8 +86,52 @@ def _heat_layers(snap):
                           marker=dict(size=size * scale, color=color, opacity=opacity * strength))
             for scale, opacity in cfg.HEAT_LAYERS]
 
+def _offset(lat, lon, bearing_deg, forward_m, right_m=0.0):
+    """Point at forward_m metres in the compass direction bearing_deg (and right_m to the right)."""
+    th = np.radians(bearing_deg)
+    east = np.sin(th) * forward_m + np.cos(th) * right_m
+    north = np.cos(th) * forward_m - np.sin(th) * right_m
+    return lat + north / 111_320, lon + east / (111_320 * np.cos(np.radians(lat)))
 
-def map_figure(snap, selected, alert_sensors, theme, view="heat"):
+
+def _flow_layers(snap, sensors, theme):
+    """FO3 on the map: an arrow from each sensor in each walking direction. The longer and thicker
+    the arrow, the more pedestrians per minute walk in that direction."""
+    t = _t(theme)
+    info = sensors.set_index("sensor")
+    base, per_q, max_len = cfg.FLOW_LENGTH
+    bins = {w: ([], []) for _, w in cfg.FLOW_WIDTH}           # line width -> (lats, lons)
+    tips = []
+    for _, r in snap.dropna(subset=["lat", "lon"]).iterrows():
+        for col, deg_col, name_col in (("Q_A", "dir_A_deg", "dir_A_name"), ("Q_B", "dir_B_deg", "dir_B_name")):
+            q, deg = r[col], r[deg_col]
+            if pd.isna(q) or pd.isna(deg) or q < cfg.FLOW_MIN:
+                continue
+            length = min(base + per_q * q, max_len)
+            head = min(max(0.3 * length, 25), 80)
+            lat0, lon0 = r["lat"], r["lon"]
+            tip = _offset(lat0, lon0, deg, length)
+            left = _offset(lat0, lon0, deg, length - head, -0.6 * head)
+            right = _offset(lat0, lon0, deg, length - head, 0.6 * head)
+            width = [w for start, w in cfg.FLOW_WIDTH if q >= start][-1]
+            lats, lons = bins[width]
+            lats += [lat0, tip[0], None, left[0], tip[0], right[0], None]
+            lons += [lon0, tip[1], None, left[1], tip[1], right[1], None]
+            tips.append((tip[0], tip[1], r["sensor"], r["location_name"], info.loc[r["sensor"], name_col],
+                         q, q * cfg.INTERVAL_MIN))
+    traces = [go.Scattermap(lat=lats, lon=lons, mode="lines", hoverinfo="skip",
+                            line=dict(width=w, color=t["series"][0]), opacity=0.9)
+              for w, (lats, lons) in bins.items() if lats]
+    if tips:
+        tp = pd.DataFrame(tips, columns=["lat", "lon", "sensor", "name", "dir", "Q", "N"])
+        traces.append(go.Scattermap(
+            lat=tp["lat"], lon=tp["lon"], mode="markers", marker=dict(size=16, color="rgba(0,0,0,0)"),
+            customdata=np.column_stack([tp["sensor"], tp["name"], tp["dir"], tp["Q"].round(0), tp["N"].round(0)]),
+            hovertemplate="<b>%{customdata[1]}</b> · %{customdata[0]}<br>Walking %{customdata[2]}<br>"
+                          "<b>%{customdata[3]} ped/min</b> (%{customdata[4]} per 3 min)<extra></extra>"))
+    return traces
+
+def map_figure(snap, selected, alert_sensors, theme, view="heat", flows=False, sensors=None):
     """FC3 / SF3.2: 2D map, one marker per sensor coloured by pressure level (grey = no data).
     view="heat" adds a glow per sensor that grows with the flow per metre (heat-map view).
     A soft halo marks sensors with a sudden change in the last minutes (SF4.4)."""
@@ -96,6 +140,9 @@ def map_figure(snap, selected, alert_sensors, theme, view="heat"):
     level = snap["level"].astype(str)
     heat = view == "heat"
     fig = go.Figure(_heat_layers(snap) if heat else [])
+    flow_traces = _flow_layers(snap, sensors, theme) if flows and sensors is not None else []
+    for tr in flow_traces[:-1] if flow_traces else []:      # arrows below the markers
+        fig.add_trace(tr)
 
     halo = snap[snap["sensor"].isin(alert_sensors)]
     if len(halo):
@@ -126,6 +173,8 @@ def map_figure(snap, selected, alert_sensors, theme, view="heat"):
                        "%{customdata[3]} ped / 3 min · %{customdata[4]} ped/min/m<br>"
                        "Measured %{customdata[5]}<br>%{customdata[6]}<extra></extra>"),
     ))
+    if flow_traces:                                          # hover targets at the arrow tips on top
+        fig.add_trace(flow_traces[-1])
     style = MAP_STYLE_OVERRIDE or cfg.MAP_STYLE.get(theme, "carto-positron")
     fig.update_layout(
         map=dict(style=style, center=cfg.MAP_CENTER, zoom=cfg.MAP_ZOOM),

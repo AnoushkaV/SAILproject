@@ -118,6 +118,12 @@ HEAT_SIZE = (22, 1.4, 90)
 # ... drawn as rings of (relative size, opacity), from outside to inside, for a soft edge
 HEAT_LAYERS = [(1.0, 0.10), (0.82, 0.11), (0.64, 0.13), (0.46, 0.16), (0.3, 0.22)]
 
+# Walking directions on the map: one arrow per direction, from the sensor in the walking direction.
+FLOW_ARROWS_DEFAULT = True
+FLOW_MIN = 2                       # ped/min: no arrow below this flow (quiet hours stay readable)
+FLOW_LENGTH = (40, 2.5, 450)       # arrow length in metres = base + per ped/min, capped at max
+FLOW_WIDTH = [(0, 2), (20, 3.5), (60, 5)]   # (from ped/min, line width in px)
+
 MAP_CENTER = {"lat": 52.3835, "lon": 4.9075}
 MAP_ZOOM = 12.3
 MAP_STYLE = {"light": "carto-positron", "dark": "carto-darkmatter"}
