@@ -86,6 +86,7 @@ def _heat_layers(snap):
                           marker=dict(size=size * scale, color=color, opacity=opacity * strength))
             for scale, opacity in cfg.HEAT_LAYERS]
 
+
 def _offset(lat, lon, bearing_deg, forward_m, right_m=0.0):
     """Point at forward_m metres in the compass direction bearing_deg (and right_m to the right)."""
     th = np.radians(bearing_deg)
@@ -130,6 +131,7 @@ def _flow_layers(snap, sensors, theme):
             hovertemplate="<b>%{customdata[1]}</b> · %{customdata[0]}<br>Walking %{customdata[2]}<br>"
                           "<b>%{customdata[3]} ped/min</b> (%{customdata[4]} per 3 min)<extra></extra>"))
     return traces
+
 
 def map_figure(snap, selected, alert_sensors, theme, view="heat", flows=False, sensors=None):
     """FC3 / SF3.2: 2D map, one marker per sensor coloured by pressure level (grey = no data).

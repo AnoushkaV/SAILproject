@@ -37,7 +37,7 @@ edit the code). `python check_data.py` prints a summary of the data and analysis
 
 **Monitoring** (crowd manager, US1) – six elements:
 1. *Measurement time banner* – time of the values shown, replay/live mode, number of locations per level.
-2. *Map* – every sensor coloured by pressure level; grey = no valid data; soft grey halo = sudden change in the last 15 min. Click a marker to select it. In the **Heat map** view (default) every sensor gets a glow in its level colour that grows and becomes stronger with the flow per metre, so the busy places stand out at a glance; quiet places fade out. Switch to **Markers** for the plain markers.
+2. *Map* – every sensor coloured by pressure level; grey = no valid data; soft grey halo = sudden change in the last 15 min. Click a marker to select it. In the **Heat map** view (default) every sensor gets a glow in its level colour that grows and becomes stronger with the flow per metre, so the busy places stand out at a glance; quiet places fade out. Switch to **Markers** for the plain markers. **Walking directions** (on by default) draws an arrow from every sensor in each walking direction; a longer, thicker arrow means more pedestrians per minute in that direction. Hover over the tip of an arrow for the numbers.
 3. *Highest pressure now* – top 5 locations by flow per metre, with the attention and threshold lines.
 4. *Sudden changes* – alerts flagged in the last hour, newest first. Click one to select that location.
 5. *Location card* – count, flow per metre, deviation from the typical pattern, walking-direction split, peak today, data validity.
@@ -50,6 +50,13 @@ table (peak count, peak flow per metre, time, level, number of sudden changes, v
 per location above the normal level, an hour-by-location heat map, the daily pattern of one location on every
 event day, and a timeline of all sudden changes. Peaks and sudden changes can be downloaded as CSV.
 
+**Alerts** (crowd manager): she chooses when she gets a pop-up. A rule = locations (empty = all) + a pressure
+level (attention / threshold exceeded / crisis "or higher") and/or events (sudden increase, sudden decrease,
+sensor without valid data). The pop-up appears at the top right on every tab when a location *newly* reaches
+the level (or rises to a higher one), so not again every 3 minutes. "Show" opens that location on the Monitoring
+tab; by default the replay pauses when a pop-up appears. Rules are remembered in the browser; all pop-ups of the
+session are listed in the alert history. Code: `alerts_tab.py` + `assets/alerts.css`.
+
 ## Code structure (architecture from report section 4.5)
 
 | File | Component | Main functions |
@@ -57,6 +64,7 @@ event day, and a timeline of all sudden changes. Peaks and sudden changes can be
 | `sail_data.py` | Data component | MF1 load counts + locations, link to effective width, step-4 indicators · MF6 data quality |
 | `sail_analysis.py` | Analysis component | MF2 levels, peaks, ranking · MF4 sudden changes · MF5 typical pattern, hourly averages |
 | `figures.py`, `app.py` | Presentation component | MF3 all charts (`figures.py`), layout and interaction (`app.py`) |
+| `alerts_tab.py` | Presentation component | SF4.4 alert rules and pop-ups (Alerts tab) |
 | `config.py` | – | every threshold, colour and parameter (NFO4) |
 
 Each component only uses the output of the previous one. The formulas for N, Q, q, directional share and ΔN
@@ -92,7 +100,7 @@ Codes follow the chapter-2 draft; check them against your final report.
 | FC3 2D map of all sensors | Monitoring map (heat-map view or markers) |
 | FC4 measurement time of every value | banner, card ("measured hh:mm"), all hovers |
 | FC5 peak flow and time of peak | Evaluation peak table; card "peak today so far" |
-| FC6 flag sudden increases/decreases | `sail_analysis.detect_sudden_changes`; alerts, map halo, ▲▼ markers, timeline |
+| FC6 flag sudden increases/decreases | `sail_analysis.detect_sudden_changes`; alerts list, pop-ups, map halo, ▲▼ markers, timeline |
 | FC7 select location, day, time window | Monitoring: day, time, location; Evaluation: days, hours, locations |
 | FC8 missing/defective data as unavailable | `sail_data.check_quality`; grey markers, warning in card, grey bands in chart |
 | NFC1 anonymous aggregated data | only 3-minute counts are used |
@@ -102,7 +110,7 @@ Codes follow the chapter-2 draft; check them against your final report.
 | NFC5 Python with course data | Python, Dash, pandas |
 | FO1 top-5 ranking by flow per metre | "Highest pressure now" |
 | FO2 comparison with typical pattern | grey typical line, "vs typical" tile, daily pattern |
-| FO3 directional and total flow | "By direction" view, direction split in card |
+| FO3 directional and total flow | arrows on the map, "By direction" view, direction split in card |
 | FO4 limit false alarms | persistence + minimum level (`config.CHANGE_*`) |
 | FO5 line charts per location | time series, daily pattern |
 | FO6 live data | `python app.py --live`; replace `load_counts()` by an API request |
@@ -136,5 +144,7 @@ table format (for example from an LVMA API).
   sensors, so colours are not interpolated between them, and nearby sensors do not add up to a higher level.
   Where many sensors are close together (e.g. the Wallen area) the glows overlap and that area looks a bit
   more intense. Glow size and strength can be tuned with `HEAT_SIZE` and `HEAT_LAYERS` in `config.py`.
+- The arrows on the map are drawn in metres, so they grow when you zoom in. Where sensors are close together
+  (Wallen, CS) the arrows overlap at the default zoom; zoom in to separate them. Arrow size: `FLOW_*` in `config.py`.
 - The map uses free CARTO base maps and needs an internet connection in the browser. Without it, start with
   `SAIL_MAP_STYLE=white-bg python app.py` to show the markers on a blank background.

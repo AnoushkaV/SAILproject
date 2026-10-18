@@ -1,7 +1,6 @@
 /* SAIL2025 crowd monitor - layout and theme (Dash loads every file in /assets automatically) */
 
-:root,
-:root[data-theme="light"] {
+:root {
   color-scheme: light;
   --page: #f4f3f0;
   --surface: #fcfcfb;
@@ -18,7 +17,6 @@
   --warn-bg: #fff4d6;
   --warn-ink: #6b4a00;
 }
-
 
 /* Dash 4 component tokens follow the theme */
 :root {
@@ -119,7 +117,6 @@ html, body {
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none;
        box-shadow: 0 0 0 1.5px var(--surface); }
 .dot.lg { width: 12px; height: 12px; }
-:root[data-theme="dark"] .dot.crisis { box-shadow: 0 0 0 1.5px var(--ink2); }
 
 /* ---------- grid + cards ---------- */
 .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }

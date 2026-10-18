@@ -1,5 +1,5 @@
 """
-alerts_tab.py - ALERTS tab: the crowd manager chooses when they get a pop-up (SF4.4).
+alerts_tab.py - ALERTS tab: the crowd manager chooses when she gets a pop-up (SF4.4).
 
 An alert rule = which locations (empty = all locations) + at which pressure level
 (attention / threshold exceeded / crisis) and/or on which events (sudden increase,

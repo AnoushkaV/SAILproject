@@ -6,9 +6,10 @@ Run from the Dashboard folder:
     python app.py --live       live mode: re-reads the data source every 3 minutes (FO6)
 and open http://127.0.0.1:8050 (in Codespaces: the forwarded port 8050).
 
-Two tabs:
+Three tabs:
     Monitoring  - for the crowd manager during the event (user story US1)
     Evaluation  - for the SAIL Amsterdam Foundation after the event (user story US2)
+    Alerts      - the crowd manager chooses when she gets a pop-up (alerts_tab.py)
 """
 import argparse
 from datetime import datetime
@@ -17,10 +18,10 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 from dash import ALL, Dash, Input, Output, State, ctx, dcc, html, no_update
 
+import alerts_tab
 import config as cfg
 import figures as figs
 import sail_analysis as sa
-import alerts_tab   
 
 STEP = pd.Timedelta(minutes=cfg.INTERVAL_MIN)
 SLOTS_PER_DAY = 24 * 60 // cfg.INTERVAL_MIN
@@ -161,7 +162,6 @@ def monitoring_tab(live: bool):
                  sub="Count per 3 minutes · grey = typical for this time on the other event days",
                  head_extra=view_toggle, cls="span-8"),
         ]),
-        dcc.Interval(id="ticker", interval=1000, disabled=True),
     ])
 
 
@@ -211,21 +211,23 @@ def evaluation_tab():
 
 def build_layout(live: bool):
     return html.Div(className="app", children=[
-        dcc.Store(id="theme", data="light"), 
+        dcc.Store(id="theme", data="light"),       # fixed light theme (the dark mode was removed)
         dcc.Store(id="data-version", data=0),
         dcc.Interval(id="live-refresh", interval=cfg.LIVE_REFRESH_S * 1000, disabled=not live),
+        dcc.Interval(id="ticker", interval=1000, disabled=True),   # replay clock, runs on every tab
+        alerts_tab.popup(),
         html.Header(className="topbar", children=[
             html.Div([html.H1("SAIL2025 crowd monitor"),
                       html.P("Pedestrian flows at the LVMA counting sensors · SAIL Amsterdam, 20–24 August 2025",
                              className="subtitle")]),
-        dcc.Interval(id="ticker", interval=1000, disabled=True), alerts_tab.popup(),
         ]),
         dcc.Tabs(id="tabs", value="monitoring", className="tabs", mobile_breakpoint=0, children=[
             dcc.Tab(label="Monitoring", value="monitoring", className="tab", selected_className="tab--selected",
                     children=monitoring_tab(live)),
             dcc.Tab(label="Evaluation", value="evaluation", className="tab", selected_className="tab--selected",
                     children=evaluation_tab()),
-            dcc.Tab(label="Alerts", value="alerts", className="tab", selected_className="tab--selected", children=alerts_tab.layout(DATA)),
+            dcc.Tab(label="Alerts", value="alerts", className="tab", selected_className="tab--selected",
+                    children=alerts_tab.layout(DATA)),
         ]),
     ])
 
@@ -426,6 +428,7 @@ def create_app(live=False) -> Dash:
     # ---- overview: banner, map, ranking, alerts ------------------------------
     @app.callback(Output("banner", "children"), Output("map", "figure"), Output("ranking", "figure"),
                   Output("alerts", "children"),
+                  Input("day", "value"), Input("slot", "value"), Input("location", "value"),
                   Input("map-view", "value"), Input("map-flows", "value"), Input("theme", "data"),
                   Input("data-version", "data"))
     def update_overview(day, slot, sensor, map_view, flows, theme, _):
@@ -508,9 +511,8 @@ def create_app(live=False) -> Dash:
         ev = ev.round({"N_before": 1, "change": 1, "change_pct": 1, "q_at_flag": 2})
         return dcc.send_data_frame(ev.drop(columns=["label"], errors="ignore").to_csv,
                                    "sail2025_sudden_changes.csv", index=False)
-    
-    alerts_tab.register_callbacks(app, lambda: DATA)
 
+    alerts_tab.register_callbacks(app, lambda: DATA)
     return app
 
 
