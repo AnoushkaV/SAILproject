@@ -9,7 +9,7 @@ This project analyses pedestrian counts collected during SAIL2025 (20–24 Augus
 
 ## Research objective and questions
 
-The objective is to develop a dashboard that helps crowd managers spot peak flows and sudden changes in flows at selected sensor locations during SAIL2025.
+The objective is to develop a dashboard that helps crowd managers identify peak pedestrian flows and sudden changes in pedestrian flows at sensor locations during SAIL2025.
 
 The subresearch questions are:
 
