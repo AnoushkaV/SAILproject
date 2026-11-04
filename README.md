@@ -13,10 +13,11 @@ The objective is to develop a dashboard that helps crowd managers identify peak 
 
 The subresearch questions are:
 
-1. Where and when were the highest flows recorded during SAIL2025?
-2. How did flows differ across locations, days and times of day?
-3. Where and when did sudden increases or decreases occur?
-4. How can a dashboard help crowd managers spot peaks and sudden changes quickly and correctly?
+1.  Peaks: At which locations and times were the highest pedestrian flows recorded during SAIL2025,     in absolute terms and per metre of effective walking width?
+2.  Temporal patterns: How did pedestrian flows change across event days and periods of the day?
+3.  Sudden changes: Where and when did sudden increases or decreases in pedestrian flow occur,          compared with the preceding 15 minutes at each sensor, and how useful are these signals?
+4.  Decision support: How can these patterns and sudden changes be presented so that crowd managers     can quickly and correctly see where and when attention is needed?
+
 
 ## Data and analysis
 
