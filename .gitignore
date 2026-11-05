@@ -1,0 +1,17 @@
+# Python cache files (created automatically when code runs)
+__pycache__/
+*.pyc
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# SAIL2025 data: confidential, must not be shared via GitHub.
+# Place the data files in Data/ locally (see README.md).
+Data/*.csv
+Data/*.xlsx
+Data/indicators/
+
+# Editor and system files
+.vscode/
+.DS_Store
+Thumbs.db
