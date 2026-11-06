@@ -50,7 +50,7 @@ DIRECTION_NAMES = {}
 # Fruin (1971) walkway levels of service, converted from ped/min/ft to ped/min/m:
 #     A <= 23 | B 23-33 | C 33-49 | D 49-66 | E 66-82 | F > 82
 # grouped into the four colour levels of NFC2. A level starts at its lower bound (q >= bound).
-# TO CHECK by the group (background research): the grouping of the Fruin levels.
+# The grouping of the Fruin levels into four levels is a design choice of this study (report section 2.2).
 LEVELS = [
     # key          label                 q from  colour     Fruin LOS
     ("normal",    "Normal",                0,   "#0f9d74", "A–B"),
@@ -69,7 +69,7 @@ LEVEL_LOS = {lv[0]: lv[4] for lv in LEVELS}
 LEVEL_FROM = {lv[0]: lv[2] for lv in LEVELS}
 
 # ---------------------------------------------------------------------------
-# Sudden changes (MF4) - method of design alternative D2 (report 4.4/4.5)
+# Sudden changes (MF4) - method described in report section 4.5
 # ---------------------------------------------------------------------------
 # Reference = mean and standard deviation of the previous CHANGE_WINDOW intervals.
 # An interval EXCEEDS when |N - mean| > CHANGE_K x std and the flow (now or reference)

@@ -57,7 +57,7 @@ the level (or rises to a higher one), so not again every 3 minutes. "Show" opens
 tab; by default the replay pauses when a pop-up appears. Rules are remembered in the browser; all pop-ups of the
 session are listed in the alert history. Code: `alerts_tab.py` + `assets/alerts.css`.
 
-## Code structure (architecture from report section 4.5)
+## Code structure
 
 | File | Component | Main functions |
 |---|---|---|
@@ -76,9 +76,9 @@ are identical to `SAIL2025_indicators_step4.ipynb` (checked: zero difference on 
 - **Pressure levels** – flow per metre q (ped/min/m) with Fruin's walkway levels of service converted to
   metric (A ≤ 23, B 23–33, C 33–49, D 49–66, E 66–82, F > 82), grouped into the four colours of NFC2:
   normal (A–B, q < 33), attention (C, q ≥ 33), threshold exceeded (D–E, q ≥ 49), crisis (F, q ≥ 82).
-  **The grouping is an assumption the group should confirm** with the background research.
+  The grouping is a design choice of this study (report section 2.2).
   In the SAIL data this gives 310 intervals "attention", 20 "threshold exceeded" (two ferry landings) and none "crisis".
-- **Sudden changes** (design alternative D2) – reference = mean and SD of the previous 5 intervals (15 min).
+- **Sudden changes** (report section 4.5) – reference = mean and SD of the previous 5 intervals (15 min).
   An interval exceeds when |N − mean| > 2 SD and the flow (now or reference) ≥ 50 ped/3 min. A change is
   flagged when 2 consecutive intervals exceed in the same direction. Result: 459 flags over 5 days
   (319 increases, 140 decreases).
@@ -91,7 +91,7 @@ are identical to `SAIL2025_indicators_step4.ipynb` (checked: zero difference on 
 
 ## Requirements → where they are implemented
 
-Codes follow the chapter-2 draft; check them against your final report.
+The codes refer to the requirements of the conceptual dashboard design (FC = functional, NFC = non-functional, FO/NFO = optional).
 
 | Requirement | Implemented in |
 |---|---|
